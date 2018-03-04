@@ -10,7 +10,14 @@ if [[ ! "awsmfa" == "$(basename "$(pwd)")" ]]; then
   echo run this script from the awsmfa/ directory
   exit 2
 fi
-DIST_DIR=$(mktemp -d)
+
+if [[ $(uname) = 'Darwin' ]];then
+  TRUE_BIN="/usr/bin/true"
+else
+  TRUE_BIN="/bin/true"
+fi
+
+DIST_DIR=$(pwd)/build/src
 python setup.py sdist -d "${DIST_DIR}"
 RELEASE=awsmfa-$(head -1 awsmfa/_version.py|cut -f4 -d\").tar.gz
 echo __ testing release "${RELEASE}"
@@ -35,7 +42,7 @@ grep -q awsmfa_expiration /root/.aws/credentials
 END
 )
 PIP_CACHE="${VIRTUAL_ENV}/pipcache"
-mkdir -p "${PIP_CACHE}" || /bin/true
+mkdir -p "${PIP_CACHE}" || ${TRUE_BIN}
 echo __ test script: "${TEST_SCRIPT}"
 LOG_DIR=$(mktemp -d)
 echo Logging to: "${LOG_DIR}"
@@ -44,10 +51,10 @@ for IMAGE in ${IMAGES}; do
   (echo __ starting "${IMAGE}" ; if docker run -t --rm \
       -w /usr/src/myapp \
       -e PIP_DOWNLOAD_CACHE=/pipcache \
-      -v "${PIP_CACHE}:/pipcache" \
+      -v "$(pwd)/build/pipcache:/pipcache" \
       -v "${DIST_DIR}:/usr/src/myapp" \
       "${IMAGE}" \
-      /bin/sh -x -e -c "${TEST_SCRIPT}" > "${LOG_FILE}" 2>&1; then
+      /bin/sh -x -e -c "${TEST_SCRIPT}" > ${LOG_FILE} 2>&1; then
     echo "${IMAGE}" PASSED
   else
     echo "${IMAGE}" FAILED

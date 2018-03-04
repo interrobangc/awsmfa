@@ -390,6 +390,7 @@ def update_credentials_file(filename, target_profile, source_profile,
         os.remove(filename)
         os.rename(temp_credentials_file, filename)
 
+    os.chmod(filename, 0o600)
 
 if __name__ == '__main__':
     sys.exit(main())
